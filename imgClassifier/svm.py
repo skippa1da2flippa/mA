@@ -26,8 +26,9 @@ print("accuracy: ", metrics.accuracy_score(y_test, y_pred))
 SVM with 10-way cross validation.
 
 TODO you should choose by yourself which technique to apply 
-(for the splitting technique)and not the default one
+(for the splitting technique) and not the default one
 """
+
 
 # create a svm Classifier
 clf = svm.SVC(kernel='linear', C=1, random_state=42)  # Linear Kernel
