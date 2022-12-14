@@ -7,4 +7,8 @@ from fetchedData import X, y
 # for each asked point:
 #    place it inside the n-th dimensional space
 #    find the k-closest neighborhoods to the point
-#    assign a label to the asked point given the closest neighborhood
+#    assign a label to the asked point given the majority vote
+
+
+
+

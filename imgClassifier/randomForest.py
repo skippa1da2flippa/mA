@@ -34,9 +34,19 @@ Random forest with 10-way cross validation
 # create a random forest classifier
 clf = RandomForestClassifier(n_estimators=50, max_depth=None, min_samples_split=2, random_state=0)
 
+# split the data between training and testing data (90-10)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=109)
+
 # train the model with 10 way cross validation
-scores = cross_val_score(clf, X, y, cv=10)
+scores = cross_val_score(clf, X_train, y_train, cv=10)
 
 # a look at the statistics
 print("mean", scores.mean())
+
 print("sd", scores.std())
+
+# testing the model
+y_pred = clf.predict(X_test)
+
+# a look at the statistics
+print("accuracy: ", metrics.accuracy_score(y_test, y_pred))
