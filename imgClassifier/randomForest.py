@@ -1,6 +1,8 @@
+
 from sklearn import metrics
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import cross_val_score, train_test_split, GridSearchCV
 from fetchedData import X, y
 
 """
@@ -31,8 +33,48 @@ print("accuracy: ", metrics.accuracy_score(y_test, y_pred))
 Random forest with 10-way cross validation
 """
 
-# create a random forest classifier
-clf = RandomForestClassifier(n_estimators=50, max_depth=None, min_samples_split=2, random_state=0)
+"""
+Parameters tuning 
+"""
+
+properties = {
+    "n_estimators": [x for x in range(20, 140, 20)],
+    "max_depth": [x for x in range(20, 120, 10)],
+    "min_samples_split": [x for x in range(2, 20, 1)],
+    "min_samples_leaf": [x for x in range(2, 20, 1)],
+}
+
+
+# Class used to represent tuning data
+class ParametersWrapper:
+
+    def __int__(self, n_estimators: int = 0, max_depth: int = 0, min_samples_split: int = 0, min_samples_leaf: int = 0):
+        self.n_estimator = n_estimators
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+
+
+classifier = RandomForestClassifier()
+
+# instantiate the tuning object
+tunedParams = GridSearchCV(
+    classifier, properties, scoring="neg_mean_squared_error", cv=2, return_train_score=True, verbose=4
+)
+
+# start the tuning process
+tunedParams.fit(X_train, y_train)
+
+# a look at the statistics
+print("Best Score: {:.3f}".format(tunedParams.best_score_))
+print("Best Params: ", tunedParams.best_params_)
+print(tunedParams.best_estimator_)
+print(tunedParams.best_score_)
+
+
+
+# create a new classifier with the tuned parameters
+clf = RandomForestClassifier(n_estimators=2, max_depth=None, min_samples_split=2, random_state=0)
 
 # split the data between training and testing data (90-10)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=109)
@@ -50,3 +92,7 @@ y_pred = clf.predict(X_test)
 
 # a look at the statistics
 print("accuracy: ", metrics.accuracy_score(y_test, y_pred))
+
+
+
+
