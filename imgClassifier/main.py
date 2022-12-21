@@ -15,9 +15,8 @@ def main():
     # object containing all the possible values for each hyperparameter
     properties = {
         "n_estimators": [x for x in range(20, 140, 20)],
-        "max_depth": [x for x in range(20, 120, 10)],
-        "min_samples_split": [x for x in range(2, 20, 1)],
-        "min_samples_leaf": [x for x in range(2, 20, 1)],
+        "max_depth": [x for x in range(20, 120, 20)],
+        "min_samples_split": [x for x in range(2, 10, 2)]
     }
 
     # instantiate the tuning object
