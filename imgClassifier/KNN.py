@@ -107,7 +107,8 @@ class Neighborhood:
         self.furthestPointDistance: float = 0.0
         self.closestPointDistance: float = 0.0
 
-    # this method adds a point to the neighborhood points list it also look for the closes and the furthest point from w
+    # this method adds a point to the neighborhood points list,
+    # it also looks for the closest and the furthest point from w
     def addPoint(self, point: list[float]):
         newDistance = euclideanDistance(nullVector, point)
         if newDistance < self.closestPointDistance:
