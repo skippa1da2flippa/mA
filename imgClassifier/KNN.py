@@ -241,8 +241,9 @@ class KNN(BaseClassifier, ABC):
         self.labels_ = unique_labels(y)
 
         # fill the 9 different neighborhoods
-        for idx, x in np.ndenumerate(self.X_):
-            self.neighborhoods[self.y_[idx]].addPoint(x.toList())
+        for iy, ix in np.ndindex(self.X_.shape):
+            if not ix:
+                self.neighborhoods[self.y_[iy]].addPoint(self.X_[iy])
 
         # Return the classifier
         return self
@@ -263,12 +264,13 @@ class KNN(BaseClassifier, ABC):
         check_array(X)
 
         predictions = []
-
+        
         with np.nditer(X, op_flags=['readwrite']) as it:
             for x in it:
+                print(it)
                 # st.mode with the below parameters returns a named tuple with fields ("mode", "count"),
                 #   each of which has a single value (because keepdims = False)
-                prediction: Tuple[np.ndarray, np.ndarray] = st.mode(a=self.findClosestNeighborhoods(x.toList()),
+                prediction: Tuple[np.ndarray, np.ndarray] = st.mode(a=self.findClosestNeighborhoods(it),
                                                                     axis=None, keepdims=False)
                 predictions.append(prediction.mode)
 
@@ -278,6 +280,9 @@ class KNN(BaseClassifier, ABC):
     def findClosestNeighborhoods(self, point: list[float]):
         distances: list[tuple[PointNdDistance, int]] = []
         candidates: list[tuple[list[PointNdDistance], int]] = []
+
+        print("SONO in findClosestNeighborhoods, il punto in input è")
+        print(point)
 
         for neighbor in self.neighborhoods:
             furthestPointDist: float = euclideanDistance(neighbor.furthestPoint, point)
