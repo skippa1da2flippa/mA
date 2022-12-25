@@ -210,7 +210,64 @@ print('F1 Score: {}'.format(f1_score(y_true=y_test,
                                      y_pred=svc_pol_test_pred,
                                      average='weighted')))
 
-
 """
 RBF KERNEL RIGHT WAY
 """
+
+# automatic parameters tuning
+svcclsf_RBF = svm.SVC(random_state=42)
+
+properties = {
+    "C": [0.02, 0.12, 0.49, 0.90, 7, 20, 50, 100],  # soft to hard margin
+    "kernel": ["rbf"],
+    "gamma": ["auto", 0.1, 1]
+}
+
+start_time = time.time()
+
+# initialize the tuning process
+tuned_svcclsf_rbf = GridSearchCV(svcclsf_RBF, properties, scoring="f1_weighted", cv=10, return_train_score=True,
+                                 verbose=6, n_jobs=4)
+# start the tuning process
+tuned_svcclsf_rbf.fit(X_train, y_train)
+print("--- %s seconds ---" % (time.time() - start_time))
+
+print("Best Score: {:.3f}".format(tuned_svcclsf_rbf.best_score_))
+print("Best Params: ", tuned_svcclsf_rbf.best_params_)
+
+# to load previously saved results
+tuned_svcclsf_rbf = joblib.load("../tuned_models/svc_rbf_tuning_results.pkl")
+
+print(tuned_svcclsf_rbf.cv_results_)
+tuned_svcclsf_rbf_results = pd.DataFrame(tuned_svcclsf_rbf.cv_results_)
+
+print(tuned_svcclsf_rbf_results[["params", "mean_test_score", "mean_train_score"]])
+
+sns.set(rc={"figure.figsize": (12, 8)})
+sns.lineplot(data=tuned_svcclsf_rbf_results, x="param_C", y="mean_test_score")
+
+print(tuned_svcclsf_rbf.best_estimator_)
+print(tuned_svcclsf_rbf.best_score_)
+
+test_acc = f1_score(y_true=y_train,
+                    y_pred=tuned_svcclsf_rbf.predict(X_train),
+                    average='weighted')
+
+print("Train F1 Score on original dataset: {}".format(test_acc))
+
+# best parameters from automatic parameters tuning
+svc_rbf_clsf = svm.SVC(**tuned_svcclsf_rbf.best_params_)
+# svc_rbf_clsf = SVC(max_leaf_nodes=100, min_samples_leaf=75, n_estimators=200, random_state=28)
+
+svc_rbf_clsf.fit(X_train, y_train)
+
+svc_rbf_train_pred = svc_rbf_clsf.predict(X_train)
+svc_rbf_test_pred = svc_rbf_clsf.predict(X_test)
+
+print("Training:")
+print('F1 Score: {}'.format(f1_score(y_true=y_train, y_pred=svc_rbf_train_pred, average='weighted')))
+
+print("Testing:")
+print('F1 Score: {}'.format(f1_score(y_true=y_test,
+                                     y_pred=svc_rbf_test_pred,
+                                     average='weighted')))

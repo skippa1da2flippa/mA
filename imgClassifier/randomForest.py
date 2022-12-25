@@ -1,3 +1,6 @@
+import os
+
+import joblib
 from sklearn import metrics
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import mean_squared_error
@@ -114,6 +117,13 @@ tunedParams = GridSearchCV(
 
 # start the tuning process
 tunedParams.fit(X_train, y_train)
+
+# save results
+if not os.path.exists('../tuned_models'):
+    os.mkdir('../tuned_models')
+
+# to load previously saved results
+joblib.dump(tunedParams, '../tuned_models/randomForest.pkl')
 
 # a look at the statistics
 print("Best Score: {:.3f}".format(tunedParams.best_score_))
