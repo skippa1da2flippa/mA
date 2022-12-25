@@ -305,7 +305,7 @@ class KNN(BaseClassifier, ABC):
                 fullPoint = FullPoint(candidates[i][0][j].point, candidates[i][0][j].distance, candidates[i][1])
                 tempList.append(fullPoint)
 
-        occurrences: list[int] = [0 for i in range(0, 8)]
+        occurrences: list[int] = [0 for i in range(0, 10)]
 
         tempList.sort(key=comparingFullPoint)
 
