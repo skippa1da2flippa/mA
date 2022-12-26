@@ -82,7 +82,7 @@ start_time = time.time()
 
 # instantiate the tuning process
 tuned_svcclsf_lin = GridSearchCV(
-    svmClf, properties, scoring="f1_weighted", cv=10, return_train_score=True, verbose=6, n_jobs=8
+    svmClf, properties, scoring="accuracy", cv=10, return_train_score=True, verbose=6, n_jobs=10
 )
 
 # start the tuning process
@@ -154,7 +154,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_
 start_time = time.time()
 
 tuned_svcclsf_pol = GridSearchCV(
-    svcclsf_pol, properties, scoring="f1_weighted", cv=10, return_train_score=True, verbose=6, n_jobs=4
+    svcclsf_pol, properties, scoring="accuracy", cv=10, return_train_score=True, verbose=6, n_jobs=10
 )
 
 tuned_svcclsf_pol.fit(X_train, y_train)
@@ -226,8 +226,8 @@ properties = {
 start_time = time.time()
 
 # initialize the tuning process
-tuned_svcclsf_rbf = GridSearchCV(svcclsf_RBF, properties, scoring="f1_weighted", cv=10, return_train_score=True,
-                                 verbose=6, n_jobs=4)
+tuned_svcclsf_rbf = GridSearchCV(svcclsf_RBF, properties, scoring="accuracy", cv=10, return_train_score=True,
+                                 verbose=6, n_jobs=10)
 # start the tuning process
 tuned_svcclsf_rbf.fit(X_train, y_train)
 print("--- %s seconds ---" % (time.time() - start_time))
@@ -257,7 +257,6 @@ print("Train F1 Score on original dataset: {}".format(test_acc))
 
 # best parameters from automatic parameters tuning
 svc_rbf_clsf = svm.SVC(**tuned_svcclsf_rbf.best_params_)
-# svc_rbf_clsf = SVC(max_leaf_nodes=100, min_samples_leaf=75, n_estimators=200, random_state=28)
 
 svc_rbf_clsf.fit(X_train, y_train)
 

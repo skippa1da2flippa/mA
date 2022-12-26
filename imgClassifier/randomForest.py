@@ -61,7 +61,7 @@ classifier = RandomForestClassifier()
 
 # instantiate the tuning object
 tunedParams = GridSearchCV(
-    classifier, properties, scoring="neg_mean_squared_error", cv=2, return_train_score=True, verbose=4
+    classifier, properties, scoring="accuracy", cv=2, return_train_score=True, verbose=4
 )
 
 # start the tuning process
@@ -112,7 +112,7 @@ properties = {
 
 # instantiate the tuning object
 tunedParams = GridSearchCV(
-    classifier, properties, scoring="neg_mean_squared_error", cv=10, return_train_score=True, verbose=4, n_jobs=5
+    classifier, properties, scoring="accuracy", cv=10, return_train_score=True, verbose=4, n_jobs=10
 )
 
 # start the tuning process

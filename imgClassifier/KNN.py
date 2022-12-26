@@ -8,6 +8,8 @@ from sklearn.utils import check_X_y
 from sklearn.utils.multiclass import unique_labels
 from sklearn.utils.validation import check_is_fitted, check_array
 
+# TODO mettere apposto le sort
+
 # null vector used as origin also called o or w here below
 nullVector: list[float] = [0.0 for i in range(0, 784)]
 
@@ -53,14 +55,14 @@ def comparingNeighborhood(fstElem: tuple[PointNdDistance, int], sdnElem: tuple[P
         return -1
 
 
+# comparing algorithm between to tuple
+def comparingNeighborhoods(fstElem: tuple[PointNdDistance, int]):
+    return fstElem[0].distance
+
+
 # comparing algorithm between to fullPoint
-def comparingFullPoint(fstElem: FullPoint, sdnElem: FullPoint):
-    if fstElem.distance > sdnElem.distance:
-        return 1
-    elif fstElem.distance == sdnElem.distance:
-        return 0
-    else:
-        return -1
+def comparingFullPoint(fstElem: FullPoint):
+    return fstElem.distance
 
 
 # this function return a comparing algorithm for points
@@ -105,13 +107,13 @@ class Neighborhood:
         self.furthestPoint = []
         self.closestPoint = []
         self.furthestPointDistance: float = 0.0
-        self.closestPointDistance: float = 0.0
+        self.closestPointDistance: float = -0.1
 
     # this method adds a point to the neighborhood points list,
     # it also looks for the closest and the furthest point from w
     def addPoint(self, point: list[float]):
         newDistance = euclideanDistance(nullVector, point)
-        if newDistance < self.closestPointDistance:
+        if newDistance < self.closestPointDistance or self.closestPointDistance < 0:
             self.closestPoint = point
             self.closestPointDistance = newDistance
 
@@ -119,9 +121,12 @@ class Neighborhood:
             self.furthestPoint = point
             self.furthestPointDistance = newDistance
 
-        for i in range(0, len(self.points)):
-            if self.points[i].distance > newDistance:
-                self.points.insert(i, PointNdDistance(point, newDistance))
+        if not len(self.points):
+            self.points.append(PointNdDistance(point, newDistance))
+        else:
+            for i in range(0, len(self.points)):
+                if self.points[i].distance > newDistance:
+                    self.points.insert(i, PointNdDistance(point, newDistance))
 
     # this method find the right slice of the points list to use as nearest points to the input point
     def __findLeftNdRightBound(self, point: list[float]) -> tuple[int, int]:
@@ -263,16 +268,15 @@ class KNN(BaseClassifier, ABC):
         # Input validation: array should be 2D with shape (n_samples, n_features)
         check_array(X)
 
+        X = X.to_numpy()
         predictions = []
-        
-        with np.nditer(X, op_flags=['readwrite']) as it:
-            for x in it:
-                print(it)
-                # st.mode with the below parameters returns a named tuple with fields ("mode", "count"),
-                #   each of which has a single value (because keepdims = False)
-                prediction: Tuple[np.ndarray, np.ndarray] = st.mode(a=self.findClosestNeighborhoods(it),
-                                                                    axis=None, keepdims=False)
-                predictions.append(prediction.mode)
+
+        for i in range(X.shape[0]):
+            # st.mode with the below parameters returns a named tuple with fields ("mode", "count"),
+            #   each of which has a single value (because keepdims = False)
+            prediction: Tuple[np.ndarray, np.ndarray] = st.mode(a=self.findClosestNeighborhoods(X[i, :]),
+                                                                axis=None, keepdims=False)
+            predictions.append(prediction.mode)
 
         return np.array(predictions)
 
@@ -285,6 +289,7 @@ class KNN(BaseClassifier, ABC):
         print(point)
 
         for neighbor in self.neighborhoods:
+            print("nel ciclo questo è il furthest point:", neighbor.furthestPoint)
             furthestPointDist: float = euclideanDistance(neighbor.furthestPoint, point)
             closestPointDist: float = euclideanDistance(neighbor.closestPoint, point)
 
@@ -293,7 +298,7 @@ class KNN(BaseClassifier, ABC):
             else:
                 distances.append((PointNdDistance(point, furthestPointDist), neighbor.label))
 
-        distances.sort(key=comparingNeighborhood)
+        distances.sort(key=comparingNeighborhoods)
 
         # neighborhoodAvoidance store the maximum number of close neighborhoods taken as feasible ones
         for i in range(0, self.neighborhoodAvoidance):
