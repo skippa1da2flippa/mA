@@ -1,14 +1,17 @@
+import copy
+import time
 from abc import ABC, abstractmethod
 from math import sqrt
 from typing import Tuple
 import scipy.stats as st
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.model_selection import GridSearchCV
 from sklearn.utils import check_X_y
 from sklearn.utils.multiclass import unique_labels
 from sklearn.utils.validation import check_is_fitted, check_array
 
-# TODO mettere apposto le sort
+from imgClassifier.fetchedData import X_train, y_train
 
 # null vector used as origin also called o or w here below
 nullVector: list[float] = [0.0 for i in range(0, 784)]
@@ -23,13 +26,6 @@ def euclideanDistance(pointA: list[float], pointB: list[float]) -> float:
     return sqrt(distance)
 
 
-# class used to represent a point and its related label
-class PointNdLabel:
-    def __int__(self, point: list[float], label: int):
-        self.point = point
-        self.label = label
-
-
 # class used to wrap a point and its distance to a specific point
 class PointNdDistance:
     def __init__(self, point: list[float], distance: float):
@@ -37,9 +33,24 @@ class PointNdDistance:
         self.distance = distance
 
 
+def ownDeepCopy(collection: list[PointNdDistance], start: int, end: int):
+    newList: list[PointNdDistance] = []
+    for i in range(start, end + 1):
+        newList.append(PointNdDistance(copy.copy(collection[i].point), collection[i].distance))
+
+    return newList
+
+
+# class used to represent a point and its related label
+class PointNdLabel:
+    def __int__(self, point: list[float], label: int):
+        self.point = point
+        self.label = label
+
+
 # class used to wrap a point, its label and its distance to a specific point
 class FullPoint:
-    def __int__(self, point: list[float], distance: float, label: int):
+    def __init__(self, point: list[float], distance: float, label: int):
         self.point = point
         self.distance = distance
         self.label = label
@@ -63,6 +74,16 @@ def comparingNeighborhoods(fstElem: tuple[PointNdDistance, int]):
 # comparing algorithm between to fullPoint
 def comparingFullPoint(fstElem: FullPoint):
     return fstElem.distance
+
+
+# comparing algorithm between to PointNdDistance
+def comparingPointNdDistance(fstElem: PointNdDistance):
+    return fstElem.distance
+
+
+def updateDistances(candidates: list[PointNdDistance], point: list[float]):
+    for i in range(0, len(candidates)):
+        candidates[i].distance = euclideanDistance(point, candidates[i].point)
 
 
 # this function return a comparing algorithm for points
@@ -166,10 +187,12 @@ class Neighborhood:
                 if self.points[i].distance / distance >= Neighborhood.shape:
                     return i
         else:
-            myRange = range(len(self.points) - 1, 0, step=-1)
+            myRange = range(len(self.points) - 1, 0, -1)
             for i in myRange:
                 if distance / self.points[i].distance >= Neighborhood.shape:
                     return i
+
+        return 0
 
     # this method find the last index to use as right/left slice
     def __findBestEnd(self, distance: float, startingIdx: int, fromTheFront: bool = True) -> int:
@@ -179,10 +202,12 @@ class Neighborhood:
                 if distance / self.points[i].distance <= Neighborhood.shape:
                     return i
         else:
-            myRange = range(startingIdx, 0, step=-1)
+            myRange = range(startingIdx, 0, -1)
             for i in myRange:
                 if self.points[i].distance / distance <= Neighborhood.shape:
                     return i
+
+        return 0
 
     # this method find the k-nearest candidates to the input point
     def getTheCandidates(self, point: list[float], k: int) -> list[PointNdDistance]:
@@ -196,10 +221,13 @@ class Neighborhood:
             rightEnd = leftRightEnd[0]
             leftEnd = leftRightEnd[1]
 
-        for i in range(leftEnd, rightEnd + 1):
-            candidates.append(self.points[i])
+        candidates = ownDeepCopy(self.points, leftEnd, rightEnd)
 
-        candidates.sort(key=wrapper(point, saveDistance=True))
+        updateDistances(candidates, point)
+
+        candidates.sort(key=comparingPointNdDistance)
+
+        if k > len(candidates): k = len(candidates)
 
         return [candidates[i] for i in range(0, k)]
 
@@ -221,11 +249,13 @@ class BaseClassifier(BaseEstimator, ClassifierMixin, ABC):
 
 class KNN(BaseClassifier, ABC):
 
-    def __init__(self, k: int, neighborhoodAvoidance: int, shape: float = 0.7, edgeAccuracy: float = 0.3):
+    def __init__(self, k: int = 5, neighborhoodAvoidance: int = 3, shape: float = 0.7, edgeAccuracy: float = 0.3):
         self.labels_ = None
         self.y_ = None
         self.X_ = None
         self.k = k
+        self.shape = shape
+        self.edgeAccuracy = edgeAccuracy
         self.neighborhoods: list[Neighborhood] = []
         self.neighborhoodAvoidance = neighborhoodAvoidance
         self.kPoints: list[PointNdLabel] = []
@@ -233,8 +263,8 @@ class KNN(BaseClassifier, ABC):
         for i in range(0, 10):
             self.neighborhoods.append(Neighborhood(i))
 
-        Neighborhood.edgeAccuracy = edgeAccuracy
-        Neighborhood.shape = shape
+        Neighborhood.edgeAccuracy = self.edgeAccuracy
+        Neighborhood.shape = self.shape
 
     def fit(self, X, y):
         # Check that X and y have correct shape
@@ -246,9 +276,9 @@ class KNN(BaseClassifier, ABC):
         self.labels_ = unique_labels(y)
 
         # fill the 9 different neighborhoods
-        for iy, ix in np.ndindex(self.X_.shape):
-            if not ix:
-                self.neighborhoods[self.y_[iy]].addPoint(self.X_[iy])
+        for i in range(X.shape[0]):
+            print("Mi sto allenando sono al:", i)
+            self.neighborhoods[self.y_[i]].addPoint(self.X_[i, :])
 
         # Return the classifier
         return self
@@ -276,6 +306,7 @@ class KNN(BaseClassifier, ABC):
             #   each of which has a single value (because keepdims = False)
             prediction: Tuple[np.ndarray, np.ndarray] = st.mode(a=self.findClosestNeighborhoods(X[i, :]),
                                                                 axis=None, keepdims=False)
+            print("prediction done:", i)
             predictions.append(prediction.mode)
 
         return np.array(predictions)
@@ -285,18 +316,15 @@ class KNN(BaseClassifier, ABC):
         distances: list[tuple[PointNdDistance, int]] = []
         candidates: list[tuple[list[PointNdDistance], int]] = []
 
-        print("SONO in findClosestNeighborhoods, il punto in input è")
-        print(point)
-
         for neighbor in self.neighborhoods:
-            print("nel ciclo questo è il furthest point:", neighbor.furthestPoint)
-            furthestPointDist: float = euclideanDistance(neighbor.furthestPoint, point)
-            closestPointDist: float = euclideanDistance(neighbor.closestPoint, point)
+            if len(neighbor.furthestPoint) and len(neighbor.closestPoint):
+                furthestPointDist: float = euclideanDistance(neighbor.furthestPoint, point)
+                closestPointDist: float = euclideanDistance(neighbor.closestPoint, point)
 
-            if furthestPointDist > closestPointDist:
-                distances.append((PointNdDistance(point, closestPointDist), neighbor.label))
-            else:
-                distances.append((PointNdDistance(point, furthestPointDist), neighbor.label))
+                if furthestPointDist > closestPointDist:
+                    distances.append((PointNdDistance(point, closestPointDist), neighbor.label))
+                else:
+                    distances.append((PointNdDistance(point, furthestPointDist), neighbor.label))
 
         distances.sort(key=comparingNeighborhoods)
 
@@ -319,7 +347,12 @@ class KNN(BaseClassifier, ABC):
 
         tempList.sort(key=comparingFullPoint)
 
-        for i in range(0, self.k):
+        if len(tempList) < self.k:
+            k = len(tempList)
+        else:
+            k = self.k
+
+        for i in range(0, k):
             occurrences[tempList[i].label] += 1
 
         maxTup: tuple[int, int] = (-1, -1)
@@ -331,4 +364,23 @@ class KNN(BaseClassifier, ABC):
                 maximum = occurrences[j]
                 maxTup = (maximum, j)
 
+        print("In prediction questa è a mia predizione:", maxTup[1])
+
         return maxTup[1]
+
+"""
+# automatic parameters tuning
+knnClsf = KNN()  # TODO create own knn algorithm
+properties = {
+
+}
+
+start_time = time.time()
+tuned_knnclsf = GridSearchCV(knnClsf, properties, scoring="f1_weighted", cv=10, return_train_score=True, verbose=5,
+                             n_jobs=4)
+tuned_knnclsf.fit(X_train, y_train)
+print("--- %s seconds ---" % (time.time() - start_time))
+
+print("Best Score: {:.3f}".format(tuned_knnclsf.best_score_))
+print("Best Params: ", tuned_knnclsf.best_params_)
+"""
