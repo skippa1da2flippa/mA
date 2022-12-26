@@ -3,7 +3,7 @@ import os
 import joblib
 from sklearn import metrics
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, ConfusionMatrixDisplay, confusion_matrix
 from sklearn.model_selection import cross_val_score, train_test_split, GridSearchCV
 from fetchedData import X, y
 
@@ -142,3 +142,12 @@ y_pred = bestClassifier.predict(X_test)
 
 # print the accuracy
 print("accuracy: ", metrics.accuracy_score(y_test, y_pred))
+
+cmat = confusion_matrix(y_true=y_test, y_pred=y_pred)
+
+disp = ConfusionMatrixDisplay(
+        confusion_matrix=cmat,
+        display_labels=[str(n) for n in range(10)]
+    )
+
+disp.plot()
