@@ -6,10 +6,12 @@ from typing import Tuple, Protocol, Any, Mapping, List, NamedTuple, Dict, Callab
 
 import numpy as np
 import pandas as pd
+
 import scipy.stats as st
 from numpy import sqrt
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import euclidean_distances
+from sklearn.model_selection import train_test_split
 from sklearn.utils.multiclass import unique_labels
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
@@ -140,3 +142,30 @@ class KNN(BaseClassifier):
                 idj = w
 
         return idj
+
+"""
+
+# split the data between training and testing data (90-10)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.99, random_state=109)
+
+classifier = KNN(3)
+
+classifier.fit(X_train, y_train)
+
+X2t, X2ts, y2t, y2ts = train_test_split(X_test, y_test, test_size=0.01, random_state=109)
+
+y_pred = classifier.predict(X2ts)
+
+# print the accuracy
+print("accuracy: ", metrics.accuracy_score(y2ts, y_pred))
+
+cmat = confusion_matrix(y_true=y2ts, y_pred=y_pred)
+
+disp = ConfusionMatrixDisplay(
+    confusion_matrix=cmat,
+    display_labels=[str(n) for n in range(10)]
+)
+
+disp.plot()
+
+"""

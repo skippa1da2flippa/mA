@@ -11,6 +11,7 @@ from sklearn.model_selection import GridSearchCV, train_test_split, cross_val_sc
 
 
 from fetchedData import X, y, X_train, y_train
+from imgClassifier.naiveBayes import predict, fit
 from imgClassifier.test import KNN
 
 
@@ -77,7 +78,7 @@ def main():
     classifier: KNN = KNN()
 
     # split the data between training and testing data (90-10)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=109)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.99, random_state=109)
 
     # object containing all the possible values for each hyperparameter
     properties = {
@@ -105,7 +106,7 @@ def main():
     # training the model
     bestClassifier.fit(X_train, y_train)
 
-    X2t, X2ts, y2t, y2ts = train_test_split(X_test, y_test, test_size=0.2, random_state=109)
+    X2t, X2ts, y2t, y2ts = train_test_split(X_test, y_test, test_size=0.01, random_state=109)
 
     # testing the model
     y_pred = bestClassifier.predict(X2ts)
@@ -123,16 +124,13 @@ def main():
     disp.plot()
     """
 
-    # split the data between training and testing data (90-10)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.99, random_state=109)
 
-    classifier = KNN(3)
-
-    classifier.fit(X_train, y_train)
+    fit(X_train, y_train)
 
     X2t, X2ts, y2t, y2ts = train_test_split(X_test, y_test, test_size=0.01, random_state=109)
 
-    y_pred = classifier.predict(X2ts)
+    y_pred = predict(X2ts)
 
     # print the accuracy
     print("accuracy: ", metrics.accuracy_score(y2ts, y_pred))
@@ -144,8 +142,7 @@ def main():
         display_labels=[str(n) for n in range(10)]
     )
 
-    disp.plot()
-
+    print(disp)
 
 if __name__ == "__main__":
     main()
